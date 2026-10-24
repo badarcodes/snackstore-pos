@@ -142,15 +142,6 @@ Frontend akan berjalan di: **`http://localhost:5173`** (atau `http://localhost:5
 
 ---
 
-## 🔑 Kredensial Login Bawaan (Default Accounts)
-
-| Role | Username | Password | Keterangan |
-|---|---|---|---|
-| **Admin / Pemilik** | `admin` | `admin123456` | Akses penuh ke semua fitur, laporan keuangan, stok, transaksi, & pengguna |
-| **Kasir Toko** | `kasir1` | `kasir123456` | Akses kasir (POS), pencatatan transaksi, cek stok, & cetak struk |
-
----
-
 ## 📁 Struktur Folder Proyek
 
 ```
