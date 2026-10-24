@@ -15,6 +15,51 @@ import PerformanceRecap from './pages/PerformanceRecap';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 
+// Error Boundary to prevent white screen of death
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error('ErrorBoundary caught an error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-stone-100 flex items-center justify-center p-4">
+          <div className="bg-white p-6 rounded-2xl border border-stone-200 shadow-xl max-w-md w-full text-center space-y-4">
+            <div className="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto text-xl font-bold">
+              ⚠️
+            </div>
+            <h2 className="text-lg font-bold text-stone-900">Terjadi Kesalahan pada Halaman</h2>
+            <p className="text-xs text-stone-500">
+              {this.state.error?.message || 'Gagal memuat antarmuka sistem.'}
+            </p>
+            <button
+              onClick={() => {
+                localStorage.removeItem('snack_token');
+                localStorage.removeItem('snack_user');
+                window.location.href = '/login';
+              }}
+              className="w-full py-2.5 px-4 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer"
+            >
+              Muat Ulang & Masuk Kembali
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 function AppContent() {
   const { user, loading } = useAuth();
   const [currentPath, setCurrentPath] = useState(window.location.pathname || '/dashboard');
@@ -32,6 +77,14 @@ function AppContent() {
     setCurrentPath(path);
     window.scrollTo(0, 0);
   };
+
+  // Sync route URL asynchronously without causing setState in render body
+  useEffect(() => {
+    if (user && (currentPath === '/' || currentPath === '/login')) {
+      window.history.replaceState({}, '', '/dashboard');
+      setCurrentPath('/dashboard');
+    }
+  }, [user, currentPath]);
 
   if (loading) {
     return (
@@ -51,17 +104,14 @@ function AppContent() {
     return <Login navigate={navigate} />;
   }
 
-  // If root path or login path while authenticated
-  if (currentPath === '/' || currentPath === '/login') {
-    navigate('/dashboard');
-    return null;
-  }
+  // Resolve active path safely
+  const activePath = (currentPath === '/' || currentPath === '/login') ? '/dashboard' : currentPath;
 
   // Routing Map
   let pageComponent = null;
   let pageTitle = 'Dashboard';
 
-  switch (currentPath) {
+  switch (activePath) {
     case '/dashboard':
       pageTitle = 'Dashboard Ringkasan';
       pageComponent = <Dashboard navigate={navigate} />;
@@ -125,8 +175,10 @@ function AppContent() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
