@@ -183,37 +183,6 @@ async function cancelTransaction(req, res, next) {
         }
       }
 
-      // 3. If paid with CASH and linked to a cash session, adjust expected cash
-      if (sale.paymentMethod === 'CASH' && sale.cashSessionId) {
-        const session = await tx.cashSession.findUnique({
-          where: { id: sale.cashSessionId }
-        });
-
-        if (session && session.status === 'OPEN') {
-          const currentSales = Number(session.totalCashSales);
-          const currentExpected = Number(session.expectedCash);
-          const refundAmount = Number(sale.finalAmount);
-
-          await tx.cashSession.update({
-            where: { id: session.id },
-            data: {
-              totalCashSales: Math.max(0, currentSales - refundAmount),
-              expectedCash: Math.max(0, currentExpected - refundAmount)
-            }
-          });
-
-          await tx.cashMovement.create({
-            data: {
-              cashSessionId: session.id,
-              type: 'OUT',
-              amount: refundAmount,
-              reason: `Koreksi kas pembatalan transaksi ${sale.invoiceNumber}`,
-              userId: req.user.id
-            }
-          });
-        }
-      }
-
       return updatedSale;
     });
 

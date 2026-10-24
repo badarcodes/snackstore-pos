@@ -6,19 +6,18 @@ import {
   Boxes,
   Receipt,
   Wallet,
-  Clock,
-  BarChart3,
   Users,
+  CalendarCheck,
+  Award,
+  TrendingUp,
+  BarChart3,
   Settings,
-  Store,
-  ChevronRight,
   LogOut
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export default function Sidebar({ currentPath, navigate, isMobileOpen, setIsMobileOpen }) {
   const { user, logout, storeSettings } = useAuth();
-  const isAdmin = user?.role === 'ADMIN';
 
   const menuItems = [
     {
@@ -26,71 +25,74 @@ export default function Sidebar({ currentPath, navigate, isMobileOpen, setIsMobi
       label: 'Dashboard',
       path: '/dashboard',
       icon: LayoutDashboard,
-      adminOnly: false
     },
     {
       id: 'pos',
-      label: 'Kasir (POS)',
+      label: 'Kasir Penjualan',
       path: '/pos',
       icon: ShoppingCart,
-      adminOnly: false,
       badge: 'Kasir'
     },
     {
       id: 'products',
-      label: 'Data Produk',
+      label: 'Data Produk Kue',
       path: '/products',
       icon: Package,
-      adminOnly: false
     },
     {
       id: 'stock',
       label: 'Manajemen Stok',
       path: '/stock',
       icon: Boxes,
-      adminOnly: false
     },
     {
       id: 'transactions',
       label: 'Riwayat Transaksi',
       path: '/transactions',
       icon: Receipt,
-      adminOnly: false
     },
     {
       id: 'finance',
-      label: 'Keuangan & Kas',
+      label: 'Keuangan & Biaya',
       path: '/finance',
       icon: Wallet,
-      adminOnly: false
     },
     {
-      id: 'cash-sessions',
-      label: 'Shift Kasir',
-      path: '/cash-sessions',
-      icon: Clock,
-      adminOnly: false
+      id: 'employees',
+      label: 'Data Karyawan',
+      path: '/employees',
+      icon: Users,
+    },
+    {
+      id: 'attendance',
+      label: 'Presensi & Cuti',
+      path: '/attendance',
+      icon: CalendarCheck,
+    },
+    {
+      id: 'evaluations',
+      label: 'Penilaian Kinerja',
+      path: '/evaluations',
+      icon: Award,
+    },
+    {
+      id: 'performance-recap',
+      label: 'Rekapitulasi Kinerja',
+      path: '/performance-recap',
+      icon: TrendingUp,
+      badge: 'Laporan'
     },
     {
       id: 'reports',
-      label: 'Laporan Lengkap',
+      label: 'Laporan Toko',
       path: '/reports',
       icon: BarChart3,
-      adminOnly: true
-    },
-    {
-      id: 'users',
-      label: 'Kelola Pengguna',
-      path: '/users',
-      icon: Users,
-      adminOnly: true
     },
     {
       id: 'settings',
       label: 'Pengaturan Toko',
       path: '/settings',
       icon: Settings,
-      adminOnly: true
     }
   ];
 
@@ -118,14 +120,14 @@ export default function Sidebar({ currentPath, navigate, isMobileOpen, setIsMobi
         {/* Brand Header */}
         <div className="h-16 flex items-center px-6 gap-3 border-b border-snack-900 bg-snack-900/60">
           <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-600 to-amber-500 flex items-center justify-center shadow-md shadow-amber-900/40 text-lg">
-            🍿
+            🎂
           </div>
           <div className="overflow-hidden">
             <h1 className="text-sm font-extrabold text-white truncate tracking-tight">
-              {storeSettings.store_name || 'SnackStore POS'}
+              {storeSettings.store_name || 'Toko Kue Jaya Baru'}
             </h1>
             <p className="text-[10px] text-amber-400 font-medium tracking-wide">
-              Toko Camilan & Kasir
+              Kue Segar & Administrasi Toko
             </p>
           </div>
         </div>

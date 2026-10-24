@@ -58,10 +58,10 @@ export default function ThermalReceipt({ sale, onClose }) {
         {/* Store Header */}
         <div className="text-center pb-2 border-b border-dashed border-stone-400">
           <div className="text-sm font-extrabold uppercase tracking-wide text-stone-950">
-            {storeSettings.store_name || 'SnackStore Berkah Renyah'}
+            {storeSettings.store_name || 'Toko Kue Jaya Baru'}
           </div>
           <div className="text-[11px] text-stone-600 mt-1 whitespace-pre-line">
-            {storeSettings.store_address || 'Jl. Camilan Gurih No. 88, Bandung'}
+            {storeSettings.store_address || 'Jl. Raya Kue Tradisional & Modern No. 88, Bandung'}
           </div>
           {storeSettings.store_phone && (
             <div className="text-[11px] text-stone-600">Telp: {storeSettings.store_phone}</div>
@@ -139,7 +139,7 @@ export default function ThermalReceipt({ sale, onClose }) {
 
         {/* Footer Note */}
         <div className="pt-3 text-center text-[10px] text-stone-500 whitespace-pre-line leading-relaxed">
-          {storeSettings.store_receipt_footer || 'Terima kasih atas kunjungan Anda!\nCamilan Renyah Bikin Nagih.'}
+          {storeSettings.store_receipt_footer || 'Terima kasih atas kunjungan Anda!\nKue Lezat & Segar Setiap Hari.'}
         </div>
       </div>
     </div>

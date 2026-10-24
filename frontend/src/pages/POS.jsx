@@ -20,7 +20,7 @@ import ThermalReceipt from '../components/ThermalReceipt';
 import Modal from '../components/Modal';
 
 export default function POS() {
-  const { user, showToast, activeSession } = useAuth();
+  const { user, showToast } = useAuth();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');

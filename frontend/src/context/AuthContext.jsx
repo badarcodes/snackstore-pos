@@ -1,17 +1,16 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { authAPI, cashSessionAPI, settingAPI } from '../services/api';
+import { authAPI, settingAPI } from '../services/api';
 
 const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [activeSession, setActiveSession] = useState(null);
   const [storeSettings, setStoreSettings] = useState({
-    store_name: 'SnackStore Berkah Renyah',
-    store_address: 'Jl. Camilan Gurih No. 88, Bandung',
-    store_phone: '0812-3456-7890',
-    store_receipt_footer: 'Terima kasih telah berbelanja camilan renyah kami!\nSimpan struk ini sebagai bukti pembayaran.',
+    store_name: 'Toko Kue Jaya Baru',
+    store_address: 'Jl. Raya Kue Tradisional & Modern No. 88, Bandung',
+    store_phone: '0812-2345-6789',
+    store_receipt_footer: 'Terima kasih telah berbelanja di Toko Kue Jaya Baru!\nKue lezat & segar pilihan keluarga setiap hari.',
     receipt_paper_width: '58mm'
   });
 
@@ -26,17 +25,6 @@ export function AuthProvider({ children }) {
   };
 
   const closeToast = () => setToast(null);
-
-  const fetchActiveSession = async () => {
-    try {
-      const res = await cashSessionAPI.getActive();
-      if (res.data.success) {
-        setActiveSession(res.data.session);
-      }
-    } catch {
-      setActiveSession(null);
-    }
-  };
 
   const fetchSettings = async () => {
     try {
@@ -55,7 +43,6 @@ export function AuthProvider({ children }) {
       if (res.data.success && res.data.user) {
         setUser(res.data.user);
         localStorage.setItem('snack_user', JSON.stringify(res.data.user));
-        fetchActiveSession();
         fetchSettings();
       } else {
         setUser(null);
@@ -79,7 +66,6 @@ export function AuthProvider({ children }) {
       setUser(res.data.user);
       localStorage.setItem('snack_token', res.data.token);
       localStorage.setItem('snack_user', JSON.stringify(res.data.user));
-      fetchActiveSession();
       fetchSettings();
       showToast(`Selamat datang kembali, ${res.data.user.name}!`, 'success');
     }
@@ -93,7 +79,6 @@ export function AuthProvider({ children }) {
       console.error('Logout error:', err);
     } finally {
       setUser(null);
-      setActiveSession(null);
       localStorage.removeItem('snack_token');
       localStorage.removeItem('snack_user');
       showToast('Anda telah berhasil logout.', 'info');
@@ -108,8 +93,6 @@ export function AuthProvider({ children }) {
         login,
         logout,
         checkAuth,
-        activeSession,
-        refreshSession: fetchActiveSession,
         storeSettings,
         refreshSettings: fetchSettings,
         toast,

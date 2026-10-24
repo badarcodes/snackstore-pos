@@ -41,26 +41,6 @@ async function processCheckout(req, res, next) {
     const data = checkoutSchema.parse(req.body);
     const cashierId = req.user.id;
 
-    // Check if cashier has an active cash session if paying with CASH
-    let activeCashSession = null;
-    if (data.paymentMethod === 'CASH') {
-      activeCashSession = await prisma.cashSession.findFirst({
-        where: {
-          cashierId,
-          status: 'OPEN'
-        },
-        orderBy: { openedAt: 'desc' }
-      });
-
-      // If no active session for this cashier, check if there's any open session in the store
-      if (!activeCashSession) {
-        activeCashSession = await prisma.cashSession.findFirst({
-          where: { status: 'OPEN' },
-          orderBy: { openedAt: 'desc' }
-        });
-      }
-    }
-
     const invoiceNumber = generateInvoiceNumber();
 
     // Execute everything in a single atomic database transaction
@@ -144,8 +124,7 @@ async function processCheckout(req, res, next) {
           cashReceived,
           changeAmount,
           status: 'COMPLETED',
-          notes: data.notes ? data.notes.trim() : null,
-          cashSessionId: activeCashSession ? activeCashSession.id : null
+          notes: data.notes ? data.notes.trim() : null
         }
       });
 
@@ -197,20 +176,6 @@ async function processCheckout(req, res, next) {
           status: 'COMPLETED'
         }
       });
-
-      // 7. Update Cash Session if CASH payment
-      if (activeCashSession && data.paymentMethod === 'CASH') {
-        const currentSales = Number(activeCashSession.totalCashSales);
-        const currentExpected = Number(activeCashSession.expectedCash);
-
-        await tx.cashSession.update({
-          where: { id: activeCashSession.id },
-          data: {
-            totalCashSales: currentSales + finalAmount,
-            expectedCash: currentExpected + finalAmount
-          }
-        });
-      }
 
       return {
         sale,

@@ -73,12 +73,30 @@ export const transactionAPI = {
   cancel: (id, reason) => api.post(`/transactions/${id}/cancel`, { reason }),
 };
 
-export const cashSessionAPI = {
-  getActive: () => api.get('/cash-sessions/active'),
-  open: (data) => api.post('/cash-sessions/open', data),
-  close: (id, data) => api.post(`/cash-sessions/${id}/close`, data),
-  addMovement: (id, data) => api.post(`/cash-sessions/${id}/movement`, data),
-  getHistory: (params) => api.get('/cash-sessions/history', { params }),
+export const employeeAPI = {
+  getAll: (params) => api.get('/employees', { params }),
+  getById: (id) => api.get(`/employees/${id}`),
+  create: (data) => api.post('/employees', data),
+  update: (id, data) => api.put(`/employees/${id}`, data),
+  delete: (id) => api.delete(`/employees/${id}`),
+};
+
+export const attendanceAPI = {
+  getAll: (params) => api.get('/attendances', { params }),
+  record: (data) => api.post('/attendances', data),
+  bulkCheckIn: (data) => api.post('/attendances/bulk-checkin', data),
+};
+
+export const leaveAPI = {
+  getAll: (params) => api.get('/leaves', { params }),
+  create: (data) => api.post('/leaves', data),
+  updateStatus: (id, data) => api.patch(`/leaves/${id}/status`, data),
+};
+
+export const evaluationAPI = {
+  getAll: (params) => api.get('/evaluations', { params }),
+  record: (data) => api.post('/evaluations', data),
+  getRecap: (params) => api.get('/evaluations/recap', { params }),
 };
 
 export const financeAPI = {

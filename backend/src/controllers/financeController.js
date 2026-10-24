@@ -4,7 +4,7 @@ const { generateExpenseNumber, generateIncomeNumber } = require('../utils/helper
 const { logAudit } = require('../utils/audit');
 
 const expenseSchema = z.object({
-  category: z.enum(['STOK_BAHAN', 'KEMASAN_PLASTIK', 'TRANSPORTASI', 'LISTRIK_AIR', 'GAJI', 'OPERASIONAL_LAIN']),
+  category: z.enum(['STOK_BAHAN', 'KEMASAN_DUS_PLASTIK', 'TRANSPORTASI', 'LISTRIK_AIR_GAS', 'GAJI_KARYAWAN', 'OPERASIONAL_LAIN']),
   amount: z.coerce.number().positive('Nominal pengeluaran harus lebih dari 0'),
   paymentMethod: z.enum(['CASH', 'TRANSFER']).default('CASH'),
   description: z.string().min(3, 'Deskripsi pengeluaran wajib diisi minimal 3 karakter')
@@ -79,61 +79,18 @@ async function createExpense(req, res, next) {
     const data = expenseSchema.parse(req.body);
     const expenseNumber = generateExpenseNumber();
 
-    // Check if there is an active cash session
-    let cashSessionId = null;
-    if (data.paymentMethod === 'CASH') {
-      const activeSession = await prisma.cashSession.findFirst({
-        where: { status: 'OPEN' },
-        orderBy: { openedAt: 'desc' }
-      });
-      if (activeSession) {
-        cashSessionId = activeSession.id;
+    const expense = await prisma.expense.create({
+      data: {
+        expenseNumber,
+        category: data.category,
+        amount: data.amount,
+        paymentMethod: data.paymentMethod === 'CASH' ? 'CASH' : 'TRANSFER',
+        description: data.description.trim(),
+        userId: req.user.id
+      },
+      include: {
+        user: { select: { id: true, name: true } }
       }
-    }
-
-    const expense = await prisma.$transaction(async (tx) => {
-      const created = await tx.expense.create({
-        data: {
-          expenseNumber,
-          category: data.category,
-          amount: data.amount,
-          paymentMethod: data.paymentMethod === 'CASH' ? 'CASH' : 'TRANSFER',
-          description: data.description.trim(),
-          userId: req.user.id,
-          cashSessionId
-        },
-        include: {
-          user: { select: { id: true, name: true } }
-        }
-      });
-
-      // If paid from active cash session, record cash movement out
-      if (cashSessionId) {
-        await tx.cashMovement.create({
-          data: {
-            cashSessionId,
-            type: 'OUT',
-            amount: data.amount,
-            reason: `Biaya: ${data.description.trim()} (${expenseNumber})`,
-            userId: req.user.id
-          }
-        });
-
-        const session = await tx.cashSession.findUnique({ where: { id: cashSessionId } });
-        if (session) {
-          const currentOut = Number(session.totalCashOut);
-          const currentExpected = Number(session.expectedCash);
-          await tx.cashSession.update({
-            where: { id: cashSessionId },
-            data: {
-              totalCashOut: currentOut + Number(data.amount),
-              expectedCash: currentExpected - Number(data.amount)
-            }
-          });
-        }
-      }
-
-      return created;
     });
 
     await logAudit({
@@ -216,60 +173,18 @@ async function createIncomeEntry(req, res, next) {
     const data = incomeSchema.parse(req.body);
     const entryNumber = generateIncomeNumber();
 
-    let cashSessionId = null;
-    if (data.paymentMethod === 'CASH') {
-      const activeSession = await prisma.cashSession.findFirst({
-        where: { status: 'OPEN' },
-        orderBy: { openedAt: 'desc' }
-      });
-      if (activeSession) {
-        cashSessionId = activeSession.id;
+    const entry = await prisma.incomeEntry.create({
+      data: {
+        entryNumber,
+        category: data.category,
+        amount: data.amount,
+        paymentMethod: data.paymentMethod === 'CASH' ? 'CASH' : 'TRANSFER',
+        description: data.description.trim(),
+        userId: req.user.id
+      },
+      include: {
+        user: { select: { id: true, name: true } }
       }
-    }
-
-    const entry = await prisma.$transaction(async (tx) => {
-      const created = await tx.incomeEntry.create({
-        data: {
-          entryNumber,
-          category: data.category,
-          amount: data.amount,
-          paymentMethod: data.paymentMethod === 'CASH' ? 'CASH' : 'TRANSFER',
-          description: data.description.trim(),
-          userId: req.user.id,
-          cashSessionId
-        },
-        include: {
-          user: { select: { id: true, name: true } }
-        }
-      });
-
-      // If cash, update active cash session
-      if (cashSessionId) {
-        await tx.cashMovement.create({
-          data: {
-            cashSessionId,
-            type: 'IN',
-            amount: data.amount,
-            reason: `Pemasukan lain: ${data.description.trim()} (${entryNumber})`,
-            userId: req.user.id
-          }
-        });
-
-        const session = await tx.cashSession.findUnique({ where: { id: cashSessionId } });
-        if (session) {
-          const currentIn = Number(session.totalCashIn);
-          const currentExpected = Number(session.expectedCash);
-          await tx.cashSession.update({
-            where: { id: cashSessionId },
-            data: {
-              totalCashIn: currentIn + Number(data.amount),
-              expectedCash: currentExpected + Number(data.amount)
-            }
-          });
-        }
-      }
-
-      return created;
     });
 
     await logAudit({
@@ -356,11 +271,6 @@ async function getFinanceSummary(req, res, next) {
     });
     const totalExpenses = Number(expenseAggregate._sum.amount || 0);
 
-    // Cash flow vs Profit:
-    // Total Inflow = Sales revenue + Other Income
-    // Total Outflow = Expenses
-    // Net Cash Flow = Total Inflow - Total Outflow
-    // Net Profit Estimation = Gross Profit (Sales Revenue - COGS) - Operational Expenses
     const totalInflow = salesRevenue + totalOtherIncome;
     const totalOutflow = totalExpenses;
     const netCashFlow = totalInflow - totalOutflow;

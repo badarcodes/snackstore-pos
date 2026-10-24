@@ -65,11 +65,27 @@ async function getDashboardData(req, res, next) {
     });
     const todayOtherIncomeAmount = Number(todayOtherIncomes._sum.amount || 0);
 
-    // 5. Active Cash Drawer
-    const activeCashSession = await prisma.cashSession.findFirst({
-      where: { status: 'OPEN' },
-      orderBy: { openedAt: 'desc' }
-    });
+    // 5. Employee Presence & Performance Summary
+    const [totalEmployees, todayAttendances, recentEvals] = await Promise.all([
+      prisma.employee.count({ where: { isActive: true } }),
+      prisma.attendance.findMany({
+        where: { date: today }
+      }),
+      prisma.dailyEvaluation.findMany({
+        take: 20,
+        orderBy: { date: 'desc' },
+        select: { averageScore: true }
+      })
+    ]);
+
+    const presentToday = todayAttendances.filter(a => a.status === 'HADIR').length;
+    const leaveOrSickToday = todayAttendances.filter(a => a.status === 'IZIN' || a.status === 'SAKIT').length;
+
+    let avgEvalScore = 0;
+    if (recentEvals.length > 0) {
+      const sum = recentEvals.reduce((acc, curr) => acc + Number(curr.averageScore), 0);
+      avgEvalScore = parseFloat((sum / recentEvals.length).toFixed(2));
+    }
 
     // 6. Top 5 Best Selling Products
     const topSellingItems = await prisma.saleItem.groupBy({
@@ -152,12 +168,12 @@ async function getDashboardData(req, res, next) {
         todayGrossProfit,
         todayExpenseAmount,
         todayOtherIncomeAmount,
-        activeCashDrawer: activeCashSession ? {
-          id: activeCashSession.id,
-          openingCash: activeCashSession.openingCash,
-          expectedCash: activeCashSession.expectedCash,
-          totalCashSales: activeCashSession.totalCashSales
-        } : null,
+        employeeStats: {
+          totalEmployees,
+          presentToday,
+          leaveOrSickToday,
+          avgEvalScore
+        },
         topSellingItems: topSellingItems.map(item => ({
           productName: item.productName,
           soldQty: item._sum.qty || 0,

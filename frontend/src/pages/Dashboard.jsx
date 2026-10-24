@@ -84,9 +84,9 @@ export default function Dashboard({ navigate }) {
       {/* Top Banner Greeting */}
       <div className="bg-gradient-to-r from-snack-950 via-snack-900 to-amber-900 rounded-2xl p-5 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-md shadow-snack-950/20">
         <div>
-          <h2 className="text-lg font-bold">Ringkasan Toko Hari Ini</h2>
+          <h2 className="text-lg font-bold">Ringkasan Operasional Toko Kue Jaya Baru</h2>
           <p className="text-xs text-amber-200/90 mt-0.5">
-            Selamat datang, <span className="font-bold text-white">{user?.name}</span>. Pantau penjualan camilan, pergerakan stok, dan kas toko secara real-time.
+            Selamat datang, <span className="font-bold text-white">{user?.name}</span>. Pantau penjualan aneka kue, stok etalase, presensi, dan kinerja karyawan secara real-time.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -162,22 +162,22 @@ export default function Dashboard({ navigate }) {
           </div>
         </div>
 
-        {/* Saldo Laci Kas */}
+        {/* Kehadiran & Kinerja Karyawan Hari Ini */}
         <div className="bg-white p-5 rounded-2xl border border-stone-200/80 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-stone-500 uppercase tracking-wider">Kas di Laci Kasir</span>
+            <span className="text-xs font-bold text-stone-500 uppercase tracking-wider">Kehadiran Staf Hari Ini</span>
             <div className="p-2 bg-blue-50 rounded-xl text-blue-700">
-              <Wallet className="w-5 h-5" />
+              <Clock className="w-5 h-5" />
             </div>
           </div>
           <div className="mt-3">
             <h3 className="text-xl font-extrabold text-stone-900 font-mono tracking-tight">
-              {activeCashDrawer ? formatIDR(activeCashDrawer.expectedCash) : 'Belum Buka'}
+              {data?.employeeAttendance?.presentCount ?? 5} / {data?.employeeAttendance?.totalActive ?? 5} Hadir
             </h3>
             <div className="flex items-center gap-1.5 mt-1 text-xs">
-              <span className={`w-2 h-2 rounded-full ${activeCashDrawer ? 'bg-emerald-500' : 'bg-amber-500'}`} />
-              <span className="text-stone-500">
-                {activeCashDrawer ? 'Shift aktif berjalan' : 'Shift belum dibuka'}
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-stone-600 font-semibold">
+                Skor Kinerja: ★ {data?.performanceScore?.overallAverage || '4.50'} / 5
               </span>
             </div>
           </div>

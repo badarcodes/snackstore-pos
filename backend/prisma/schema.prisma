@@ -9,7 +9,6 @@ datasource db {
 
 enum Role {
   ADMIN
-  CASHIER
 }
 
 enum StockMovementType {
@@ -33,22 +32,12 @@ enum SaleStatus {
   CANCELLED
 }
 
-enum CashSessionStatus {
-  OPEN
-  CLOSED
-}
-
-enum CashMovementType {
-  IN
-  OUT
-}
-
 enum ExpenseCategory {
   STOK_BAHAN
-  KEMASAN_PLASTIK
+  KEMASAN_DUS_PLASTIK
   TRANSPORTASI
-  LISTRIK_AIR
-  GAJI
+  LISTRIK_AIR_GAS
+  GAJI_KARYAWAN
   OPERASIONAL_LAIN
 }
 
@@ -58,25 +47,44 @@ enum IncomeCategory {
   BONUS_SUPPLIER
 }
 
+enum AttendanceStatus {
+  HADIR
+  IZIN
+  SAKIT
+  ALPA
+}
+
+enum LeaveType {
+  CUTI_TAHUNAN
+  SAKIT
+  IZIN
+  CUTI_MELAHIRKAN
+  CUTI_KHUSUS
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 model User {
   id            Int             @id @default(autoincrement())
   username      String          @unique
   name          String
   password      String
-  role          Role            @default(CASHIER)
+  role          Role            @default(ADMIN)
   isActive      Boolean         @default(true)
   lastLoginAt   DateTime?
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
 
-  sales         Sale[]          @relation("CashierSales")
+  sales         Sale[]          @relation("AdminSales")
   cancelledSales Sale[]         @relation("CancelledSales")
   stockMovements StockMovement[]
   purchases     Purchase[]
   expenses      Expense[]
   incomeEntries IncomeEntry[]
-  cashSessions  CashSession[]
-  cashMovements CashMovement[]
   auditLogs     AuditLog[]
 
   @@map("users")
@@ -119,7 +127,7 @@ model Product {
   costPrice    Decimal         @db.Decimal(12, 2)
   sellingPrice Decimal         @db.Decimal(12, 2)
   stock        Int             @default(0)
-  unit         String          @default("bungkus")
+  unit         String          @default("box")
   minStock     Int             @default(5)
   isActive     Boolean         @default(true)
   createdAt    DateTime        @default(now())
@@ -192,53 +200,11 @@ model PurchaseItem {
   @@map("purchase_items")
 }
 
-model CashSession {
-  id             Int               @id @default(autoincrement())
-  cashierId      Int
-  cashier        User              @relation(fields: [cashierId], references: [id])
-  openingCash    Decimal           @db.Decimal(12, 2)
-  totalCashSales Decimal           @default(0) @db.Decimal(12, 2)
-  totalCashIn    Decimal           @default(0) @db.Decimal(12, 2)
-  totalCashOut   Decimal           @default(0) @db.Decimal(12, 2)
-  expectedCash   Decimal           @default(0) @db.Decimal(12, 2)
-  actualCash     Decimal?          @db.Decimal(12, 2)
-  difference     Decimal?          @db.Decimal(12, 2)
-  status         CashSessionStatus @default(OPEN)
-  notes          String?
-  openedAt       DateTime          @default(now())
-  closedAt       DateTime?
-
-  sales          Sale[]
-  cashMovements  CashMovement[]
-  expenses       Expense[]
-  incomeEntries  IncomeEntry[]
-
-  @@index([cashierId])
-  @@index([status])
-  @@map("cash_sessions")
-}
-
-model CashMovement {
-  id            Int              @id @default(autoincrement())
-  cashSessionId Int
-  cashSession   CashSession      @relation(fields: [cashSessionId], references: [id], onDelete: Cascade)
-  type          CashMovementType
-  amount        Decimal          @db.Decimal(12, 2)
-  reason        String
-  userId        Int
-  user          User             @relation(fields: [userId], references: [id])
-  createdAt     DateTime         @default(now())
-
-  @@index([cashSessionId])
-  @@index([userId])
-  @@map("cash_movements")
-}
-
 model Sale {
   id                 Int           @id @default(autoincrement())
   invoiceNumber      String        @unique
   cashierId          Int
-  cashier            User          @relation("CashierSales", fields: [cashierId], references: [id])
+  cashier            User          @relation("AdminSales", fields: [cashierId], references: [id])
   totalAmount        Decimal       @db.Decimal(12, 2)
   discountAmount     Decimal       @default(0) @db.Decimal(12, 2)
   finalAmount        Decimal       @db.Decimal(12, 2)
@@ -251,8 +217,6 @@ model Sale {
   cancelledById      Int?
   cancelledBy        User?         @relation("CancelledSales", fields: [cancelledById], references: [id])
   cancelledAt        DateTime?
-  cashSessionId      Int?
-  cashSession        CashSession?  @relation(fields: [cashSessionId], references: [id])
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
 
@@ -263,7 +227,6 @@ model Sale {
   @@index([status])
   @@index([paymentMethod])
   @@index([createdAt])
-  @@index([cashSessionId])
   @@map("sales")
 }
 
@@ -311,14 +274,11 @@ model Expense {
   user          User            @relation(fields: [userId], references: [id])
   purchaseId    Int?
   purchase      Purchase?       @relation(fields: [purchaseId], references: [id])
-  cashSessionId Int?
-  cashSession   CashSession?    @relation(fields: [cashSessionId], references: [id])
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
 
   @@index([userId])
   @@index([category])
-  @@index([cashSessionId])
   @@index([createdAt])
   @@map("expenses")
 }
@@ -332,16 +292,99 @@ model IncomeEntry {
   description   String
   userId        Int
   user          User           @relation(fields: [userId], references: [id])
-  cashSessionId Int?
-  cashSession   CashSession?   @relation(fields: [cashSessionId], references: [id])
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 
   @@index([userId])
   @@index([category])
-  @@index([cashSessionId])
   @@index([createdAt])
   @@map("income_entries")
+}
+
+// -------------------------------------------------------------
+// MODUL KARYAWAN, KEHADIRAN, CUTI & EVALUASI KINERJA HARIAN
+// -------------------------------------------------------------
+
+model Employee {
+  id                     Int                    @id @default(autoincrement())
+  employeeCode           String                 @unique // e.g. "KUE-001"
+  name                   String
+  position               String                 // e.g. "Kepala Baker", "Baker Kue Basah", "Pelayan Toko & Kasir", "Staff Packing & Display", "Kebersihan"
+  phone                  String?
+  address                String?
+  hireDate               DateTime               @default(now())
+  salary                 Decimal?               @db.Decimal(12, 2)
+  isActive               Boolean                @default(true)
+  createdAt              DateTime               @default(now())
+  updatedAt              DateTime               @updatedAt
+
+  attendances            Attendance[]
+  leaves                 LeaveRequest[]
+  evaluations            DailyEvaluation[]
+
+  @@index([isActive])
+  @@index([name])
+  @@map("employees")
+}
+
+model Attendance {
+  id         Int              @id @default(autoincrement())
+  employeeId Int
+  employee   Employee         @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  date       DateTime         @db.Date
+  checkIn    String?          // e.g. "07:30"
+  checkOut   String?          // e.g. "16:30"
+  status     AttendanceStatus @default(HADIR) // HADIR, IZIN, SAKIT, ALPA
+  notes      String?
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  @@unique([employeeId, date])
+  @@index([date])
+  @@index([status])
+  @@map("attendances")
+}
+
+model LeaveRequest {
+  id          Int         @id @default(autoincrement())
+  employeeId  Int
+  employee    Employee    @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  type        LeaveType   @default(CUTI_TAHUNAN)
+  startDate   DateTime    @db.Date
+  endDate     DateTime    @db.Date
+  daysCount   Int         @default(1)
+  reason      String
+  status      LeaveStatus @default(PENDING) // PENDING, APPROVED, REJECTED
+  adminNotes  String?
+  approvedAt  DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([employeeId])
+  @@index([status])
+  @@map("leave_requests")
+}
+
+model DailyEvaluation {
+  id              Int      @id @default(autoincrement())
+  employeeId      Int
+  employee        Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  date            DateTime @db.Date
+  // 5 Indikator Penilaian Kinerja Karyawan (Skala 1 s.d 5)
+  // 1: Sangat Tidak Baik, 2: Tidak Baik, 3: Cukup/Rata-rata, 4: Baik, 5: Sangat Baik
+  scoreDiscipline Int      // 1. Kedisiplinan & Ketepatan Waktu
+  scoreQuality    Int      // 2. Kualitas Pembuatan Kue, Resep & Higienitas
+  scoreService    Int      // 3. Pelayanan Pembeli & Keramahan
+  scoreTeamwork   Int      // 4. Kerja Sama Tim & Koordinasi Kerja
+  scoreInitiative Int      // 5. Inisiatif Kerja & Tanggung Jawab
+  averageScore    Decimal  @db.Decimal(4, 2) // Nilai Rata-rata dari 5 indikator
+  notes           String?  // Catatan Evaluasi Harian dari Admin
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([employeeId, date])
+  @@index([date])
+  @@map("daily_evaluations")
 }
 
 model AuditLog {

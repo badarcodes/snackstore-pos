@@ -40,22 +40,13 @@ export default function Navbar({ title, onToggleMobile, onOpenShiftModal, naviga
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3">
-        {/* Cash Drawer Shift Indicator */}
-        <button
-          onClick={onOpenShiftModal}
-          className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
-            activeSession
-              ? 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100'
-              : 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100'
-          }`}
-          title="Klik untuk melihat atau mengelola shift laci kasir"
-        >
-          <span className={`w-2 h-2 rounded-full animate-pulse ${activeSession ? 'bg-emerald-500' : 'bg-amber-500'}`} />
-          <span className="hidden sm:inline">Laci Kas:</span>
-          <span className="font-mono text-xs font-semibold">
-            {activeSession ? formatIDR(activeSession.expectedCash) : 'Belum Buka Shift'}
-          </span>
-        </button>
+        {/* Store & Status Pill */}
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-amber-200 bg-amber-50 text-amber-900 text-xs font-bold shadow-xs">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          <span className="hidden sm:inline">Toko Buka</span>
+          <span className="text-stone-300 hidden sm:inline">•</span>
+          <span className="text-amber-800 font-semibold truncate max-w-[150px]">Toko Kue Jaya Baru</span>
+        </div>
 
         {/* Quick POS Button */}
         <button

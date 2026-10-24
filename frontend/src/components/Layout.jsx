@@ -2,22 +2,14 @@ import React, { useState } from 'react';
 import Sidebar from './Sidebar';
 import Navbar from './Navbar';
 import Toast from './Toast';
-import ShiftModal from './ShiftModal';
 
 export default function Layout({ children, currentPath, navigate, title }) {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const [isShiftModalOpen, setIsShiftModalOpen] = useState(false);
 
   return (
     <div className="flex h-screen bg-stone-100 overflow-hidden font-['Plus_Jakarta_Sans',sans-serif]">
       {/* Toast Notifications */}
       <Toast />
-
-      {/* Shift Drawer Modal */}
-      <ShiftModal
-        isOpen={isShiftModalOpen}
-        onClose={() => setIsShiftModalOpen(false)}
-      />
 
       {/* Sidebar Navigation */}
       <Sidebar
@@ -32,7 +24,6 @@ export default function Layout({ children, currentPath, navigate, title }) {
         <Navbar
           title={title}
           onToggleMobile={() => setIsMobileOpen(!isMobileOpen)}
-          onOpenShiftModal={() => setIsShiftModalOpen(true)}
           navigate={navigate}
         />
 
