@@ -18,6 +18,7 @@ import { useAuth } from '../context/AuthContext';
 
 export default function Sidebar({ currentPath, navigate, isMobileOpen, setIsMobileOpen }) {
   const { user, logout, storeSettings } = useAuth();
+  const isAdmin = user?.role === 'ADMIN';
 
   const menuItems = [
     {
