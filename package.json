@@ -1,0 +1,25 @@
+{
+  "name": "snackstore-pos",
+  "version": "1.0.0",
+  "description": "Full-stack Point of Sale & Administration for Snack Store (Toko Camilan Kering)",
+  "scripts": {
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "db:push": "cd backend && npx prisma db push",
+    "db:seed": "cd backend && node prisma/seed.js",
+    "build:frontend": "cd frontend && npm run build"
+  },
+  "keywords": [
+    "pos",
+    "snack-store",
+    "point-of-sale",
+    "react",
+    "express",
+    "prisma",
+    "mysql",
+    "recharts",
+    "tailwindcss"
+  ],
+  "author": "Antigravity",
+  "license": "ISC"
+}
